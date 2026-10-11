@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>glowdoradeis</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="glowdoradeis">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F7F5F0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600&family=Figtree:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #F7F5F0; overflow: hidden; }
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); box-sizing: border-box; }
+  body.lista { background: #fff; }
+  #app { display: block; width: 100%; height: 100%; border: 0; background: #F7F5F0; opacity: 0; transition: opacity .35s; }
+  #app.lista { opacity: 1; }
+  #splash { position: fixed; inset: 0; display: grid; place-items: center; background: #F7F5F0; transition: opacity .35s; z-index: 2; }
+  #splash.fuera { opacity: 0; pointer-events: none; }
+  .logo { text-align: center; font-family: 'Figtree', system-ui, sans-serif; color: #8A7A55; }
+  .logo svg { width: 76px; height: 76px; fill: none; stroke: #C49E3A; stroke-width: 1.5; animation: brillo 1.8s ease-in-out infinite; }
+  .logo h1 { font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 600; font-size: 44px; margin: 6px 0 4px;
+    background: linear-gradient(180deg, #E0BC5A, #A9821A); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo p { margin: 0; font-size: 15px; }
+  .aviso { max-width: 320px; margin: 18px auto 0; font-size: 14px; color: #8a3a3a; line-height: 1.4; }
+  @keyframes brillo { 50% { transform: scale(.9) rotate(22.5deg); opacity: .7; } }
+  @media (prefers-reduced-motion: reduce) { .logo svg { animation: none; } }
+</style>
+</head>
+<body>
+<div id="splash">
+  <div class="logo">
+    <svg id="estrella" viewBox="0 0 120 120" aria-hidden="true"></svg>
+    <h1>glowdoradeis</h1>
+    <p id="estado">Cargando…</p>
+  </div>
+</div>
+<iframe id="app" title="glowdoradeis" allow="clipboard-write"></iframe>
+
+<script>
+  // ======= PEGA AQUÍ el link de tu app de Apps Script (el que termina en /exec) =======
+  const APP_URL = 'PEGA_AQUI_TU_LINK_EXEC';
+  // ====================================================================================
+
+  // Dibuja la estrella del logo
+  (function () {
+    const svg = document.getElementById('estrella');
+    let html = '';
+    [1, 0.42].forEach(function (k) {
+      let d = '';
+      for (let i = 0; i < 16; i++) {
+        const a = (i * 22.5 - 90) * Math.PI / 180;
+        const r = i % 2 ? 6.5 : (i % 4 === 0 ? ((i / 4) % 2 === 0 ? 52 : 44) : 20);
+        d += (i ? 'L' : 'M') + (60 + r * k * Math.cos(a)).toFixed(2) + ' ' + (60 + r * k * Math.sin(a)).toFixed(2);
+      }
+      html += '<path d="' + d + 'Z"/>';
+    });
+    svg.innerHTML = html;
+  })();
+
+  const frame = document.getElementById('app');
+  const splash = document.getElementById('splash');
+  const estado = document.getElementById('estado');
+
+  function leerClave() { try { return localStorage.getItem('glow_pin') || ''; } catch (e) { return ''; } }
+  function guardarClave(v) { try { v ? localStorage.setItem('glow_pin', v) : localStorage.removeItem('glow_pin'); } catch (e) {} }
+
+  // La app avisa cuando la clave se escribe bien o deja de ser válida
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.glow === 'pin') guardarClave(e.data.v || '');
+  });
+
+  if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(APP_URL)) {
+    estado.innerHTML = 'Falta configurar la app.<div class="aviso">Edita <b>index.html</b> y pega en APP_URL el link de Apps Script que termina en /exec.</div>';
+  } else {
+    const clave = leerClave();
+    frame.src = APP_URL + (clave ? '?k=' + encodeURIComponent(clave) : '');
+    frame.addEventListener('load', function () {
+      setTimeout(function () {
+        frame.classList.add('lista');
+        document.body.classList.add('lista');
+        splash.classList.add('fuera');
+      }, 400);
+    });
+    setTimeout(function () {
+      if (!frame.classList.contains('lista')) estado.textContent = 'Está tardando más de lo normal… revisa tu conexión.';
+    }, 15000);
+  }
+</script>
+</body>
+</html>
